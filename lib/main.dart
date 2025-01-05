@@ -88,6 +88,8 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           key: appBarKey,
           actions: [
+            // OF(Object offset), the offset of the target widget from the top of the screen
+            // SO(Scroll offset), the current scroll offset from the top of the screen
             Text(
                 "OF: ${targetKey.widgetScreenOffset?.dy.round()}, SO: ${scrollController.hasClients ? scrollController.offset.round() : null}"),
             const SizedBox(
@@ -95,14 +97,12 @@ class _MyAppState extends State<MyApp> {
             ),
             ElevatedButton(
                 onPressed: () {
-                  final renderBox =
-                      targetKey.currentContext!.findRenderObject() as RenderBox;
                   scrollController.scrollWidgetIntoView(
                     targetKey,
                     viewportHeight:
                         ((MediaQuery.sizeOf(context).height +
                             appBarKey.widgetSize!.height) * 1 / 2) -
-                            (renderBox.size.height / 2),
+                            (targetKey.widgetSize!.height / 2),
                   );
                 },
                 child: const Text('scroll')),
