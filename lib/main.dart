@@ -10,6 +10,13 @@ extension on GlobalKey {
     Offset screenOffset = renderBox.localToGlobal(Offset.zero);
     return screenOffset;
   }
+
+  Size? get widgetSize {
+    if (currentWidget == null) return null;
+    final renderBox = currentContext!.findRenderObject() as RenderBox;
+
+    return renderBox.size;
+  }
 }
 
 extension on ScrollController {
@@ -53,6 +60,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Size get screenSize => MediaQuery.sizeOf(context);
   GlobalKey targetKey = GlobalKey();
+  GlobalKey appBarKey = GlobalKey();
   String position = '';
   final ScrollController scrollController = ScrollController();
 
@@ -78,6 +86,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
+          key: appBarKey,
           actions: [
             Text(
                 "OF: ${targetKey.widgetScreenOffset?.dy.round()}, SO: ${scrollController.hasClients ? scrollController.offset.round() : null}"),
@@ -86,9 +95,14 @@ class _MyAppState extends State<MyApp> {
             ),
             ElevatedButton(
                 onPressed: () {
+                  final renderBox =
+                      targetKey.currentContext!.findRenderObject() as RenderBox;
                   scrollController.scrollWidgetIntoView(
                     targetKey,
-                    viewportHeight: MediaQuery.sizeOf(context).height * 1 / 2,
+                    viewportHeight:
+                        ((MediaQuery.sizeOf(context).height +
+                            appBarKey.widgetSize!.height) * 1 / 2) -
+                            (renderBox.size.height / 2),
                   );
                 },
                 child: const Text('scroll')),
@@ -97,30 +111,81 @@ class _MyAppState extends State<MyApp> {
             )
           ],
         ),
-        body: SingleChildScrollView(
-          controller: scrollController,
-          child: Column(
-            children: [
-              ...List<Widget>.generate(posts.length, (index) {
-                final post = posts.elementAt(index);
+        body: Builder(builder: (context) {
+          final renderBox =
+              targetKey.currentContext?.findRenderObject() as RenderBox?;
 
-                return ListTile(
-                  key: index == 24 ? targetKey : null,
-                  leading: Text('${post.index}'),
-                  title: Text(
-                    post.name,
-                    style: index == 24
-                        ? const TextStyle(
-                            color: Colors.deepPurple,
-                            fontWeight: FontWeight.bold)
-                        : null,
+          final screenOffset = renderBox?.localToGlobal(Offset.zero);
+          final dx = (screenOffset?.dx ?? 0) - 20;
+          final dy =
+              (screenOffset?.dy ?? 0) - (appBarKey.widgetSize?.height ?? 0) - 20;
+
+          return Stack(
+            children: [
+              const Center(
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.amber,
+                ),
+              ),
+              if (screenOffset != null)
+                Positioned(
+                  left: dx,
+                  top: dy,
+                  child: const Center(
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.amber,
+                    ),
                   ),
-                  subtitle: Text(post.post),
-                );
-              })
+                ),
+              if (screenOffset != null)
+                Positioned(
+                  left: dx! + targetKey.widgetSize!.width,
+                  top: dy,
+                  child: const Center(
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.amber,
+                    ),
+                  ),
+                ),
+              SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  children: [
+                    ...List<Widget>.generate(posts.length, (index) {
+                      final post = posts.elementAt(index);
+
+                      return index == 24
+                          ? Container(
+                              key: targetKey,
+                              width: MediaQuery.sizeOf(context).width - 32,
+                              height: 300,
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withOpacity(0.3),
+                                // borderRadius: BorderRadius.circular(16),
+                              ),
+                            )
+                          : ListTile(
+                              leading: Text('${post.index}'),
+                              title: Text(
+                                post.name,
+                                style: index == 24
+                                    ? const TextStyle(
+                                        color: Colors.deepPurple,
+                                        fontWeight: FontWeight.bold)
+                                    : null,
+                              ),
+                              subtitle: Text(post.post),
+                            );
+                    })
+                  ],
+                ),
+              ),
             ],
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
