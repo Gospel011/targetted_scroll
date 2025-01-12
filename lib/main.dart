@@ -64,6 +64,9 @@ class _MyAppState extends State<MyApp> {
   String position = '';
   final ScrollController scrollController = ScrollController();
 
+
+  List<GlobalKey> keys = [];
+
   @override
   void initState() {
     super.initState();
@@ -81,111 +84,134 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Material App',
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          key: appBarKey,
-          actions: [
-            // OF(Object offset), the offset of the target widget from the top of the screen
-            // SO(Scroll offset), the current scroll offset from the top of the screen
-            Text(
-                "OF: ${targetKey.widgetScreenOffset?.dy.round()}, SO: ${scrollController.hasClients ? scrollController.offset.round() : null}"),
-            const SizedBox(
-              width: 10,
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  scrollController.scrollWidgetIntoView(
-                    targetKey,
-                    viewportHeight:
-                        ((MediaQuery.sizeOf(context).height +
-                            appBarKey.widgetSize!.height) * 1 / 2) -
-                            (targetKey.widgetSize!.height / 2),
-                  );
-                },
-                child: const Text('scroll')),
-            const SizedBox(
-              width: 16,
-            )
-          ],
-        ),
-        body: Builder(builder: (context) {
-          final renderBox =
-              targetKey.currentContext?.findRenderObject() as RenderBox?;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        // print("SCROLL NOTIFICATION: $notification");
 
-          final screenOffset = renderBox?.localToGlobal(Offset.zero);
-          final dx = (screenOffset?.dx ?? 0) - 20;
-          final dy =
-              (screenOffset?.dy ?? 0) - (appBarKey.widgetSize?.height ?? 0) - 20;
+        if (notification is ScrollEndNotification) {
+          print('scrolling ends');
+        }
 
-          return Stack(
-            children: [
-              const Center(
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.amber,
-                ),
+        return true;
+      },
+      child: MaterialApp(
+        title: 'Material App',
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          appBar: AppBar(
+            key: appBarKey,
+            actions: [
+              // OF(Object offset), the offset of the target widget from the top of the screen
+              // SO(Scroll offset), the current scroll offset from the top of the screen
+              Text(
+                  "OF: ${targetKey.widgetScreenOffset?.dy.round()}, SO: ${scrollController.hasClients ? scrollController.offset.round() : null}"),
+              const SizedBox(
+                width: 10,
               ),
-              if (screenOffset != null)
-                Positioned(
-                  left: dx,
-                  top: dy,
-                  child: const Center(
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.amber,
-                    ),
-                  ),
-                ),
-              if (screenOffset != null)
-                Positioned(
-                  left: dx! + targetKey.widgetSize!.width,
-                  top: dy,
-                  child: const Center(
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.amber,
-                    ),
-                  ),
-                ),
-              SingleChildScrollView(
-                controller: scrollController,
-                child: Column(
-                  children: [
-                    ...List<Widget>.generate(posts.length, (index) {
-                      final post = posts.elementAt(index);
-
-                      return index == 24
-                          ? Container(
-                              key: targetKey,
-                              width: MediaQuery.sizeOf(context).width - 32,
-                              height: 300,
-                              decoration: BoxDecoration(
-                                color: Colors.deepPurple.withOpacity(0.3),
-                                // borderRadius: BorderRadius.circular(16),
-                              ),
-                            )
-                          : ListTile(
-                              leading: Text('${post.index}'),
-                              title: Text(
-                                post.name,
-                                style: index == 24
-                                    ? const TextStyle(
-                                        color: Colors.deepPurple,
-                                        fontWeight: FontWeight.bold)
-                                    : null,
-                              ),
-                              subtitle: Text(post.post),
-                            );
-                    })
-                  ],
-                ),
-              ),
+              ElevatedButton(
+                  onPressed: () {
+                    Scrollable.ensureVisible(
+                      keys[49].currentContext!,
+                      duration: const Duration(milliseconds: 800),
+                      alignment: 0.5
+                    );
+      
+                    // scrollController.scrollWidgetIntoView(
+                    //   targetKey,
+                    //   viewportHeight:
+                    //       ((MediaQuery.sizeOf(context).height +
+                    //           appBarKey.widgetSize!.height) * 1 / 2) -
+                    //           (targetKey.widgetSize!.height / 2),
+                    // );
+                  },
+                  child: const Text('scroll')),
+              const SizedBox(
+                width: 16,
+              )
             ],
-          );
-        }),
+          ),
+          body: Builder(builder: (context) {
+            final renderBox =
+                targetKey.currentContext?.findRenderObject() as RenderBox?;
+      
+            final screenOffset = renderBox?.localToGlobal(Offset.zero);
+            final dx = (screenOffset?.dx ?? 0) - 20;
+            final dy = (screenOffset?.dy ?? 0) -
+                (appBarKey.widgetSize?.height ?? 0) -
+                20;
+      
+            return Stack(
+              children: [
+                const Center(
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.amber,
+                  ),
+                ),
+                if (screenOffset != null)
+                  Positioned(
+                    left: dx,
+                    top: dy,
+                    child: const Center(
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.amber,
+                      ),
+                    ),
+                  ),
+                if (screenOffset != null)
+                  Positioned(
+                    left: dx! + targetKey.widgetSize!.width,
+                    top: dy,
+                    child: const Center(
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.amber,
+                      ),
+                    ),
+                  ),
+                SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      ...List<Widget>.generate(posts.length, (index) {
+                        final post = posts.elementAt(index);
+      
+                        final key = GlobalKey();
+      
+                        keys.add(key);
+      
+                        return index == 24
+                            ? Container(
+                                key: keys[index],
+                                width: MediaQuery.sizeOf(context).width - 32,
+                                height: 300,
+                                decoration: BoxDecoration(
+                                  color: Colors.deepPurple.withOpacity(0.3),
+                                  // borderRadius: BorderRadius.circular(16),
+                                ),
+                              )
+                            : ListTile(
+                              key: keys[index],
+                                leading: Text('${post.index}'),
+                                title: Text(
+                                  post.name,
+                                  style: index == 24
+                                      ? const TextStyle(
+                                          color: Colors.deepPurple,
+                                          fontWeight: FontWeight.bold)
+                                      : null,
+                                ),
+                                subtitle: Text(post.post),
+                              );
+                      })
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
       ),
     );
   }
